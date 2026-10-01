@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="1200" viewBox="0 0 900 1200" fill="none">
+  <defs>
+    <radialGradient id="glow" cx="0" cy="0" r="1" gradientTransform="matrix(0 580 -420 0 490 600)" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#31B7E7" stop-opacity=".45"/><stop offset=".55" stop-color="#1173AE" stop-opacity=".16"/><stop offset="1" stop-color="#031A33" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="bone" x1="310" x2="625" y1="82" y2="1090" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#D7F6FF" stop-opacity=".68"/><stop offset=".46" stop-color="#8CDCF1" stop-opacity=".45"/><stop offset="1" stop-color="#B9F1FF" stop-opacity=".7"/>
+    </linearGradient>
+    <filter id="blur" width="1.6" height="1.4" x="-.3" y="-.2" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="25"/>
+    </filter>
+    <filter id="soft" width="1.3" height="1.2" x="-.15" y="-.1" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="7"/>
+    </filter>
+  </defs>
+  <rect width="900" height="1200" fill="url(#glow)"/>
+  <ellipse cx="515" cy="590" fill="#37C5EE" fill-opacity=".18" rx="150" ry="460" filter="url(#blur)"/>
+  <g opacity=".38" stroke="#8CE7FF" stroke-width="2">
+    <path d="M155 200h34m-17-17v34M695 290h34m-17-17v34M690 870h34m-17-17v34M170 960h34m-17-17v34"/>
+    <circle cx="300" cy="350" r="88" stroke-dasharray="4 14"/><circle cx="705" cy="680" r="115" stroke-dasharray="4 18"/>
+    <path d="M145 600h120m-60-60v120M680 430h112m-56-56v112"/>
+  </g>
+  <g fill="url(#bone)" stroke="#D5F9FF" stroke-opacity=".72" stroke-width="7">
+    <path d="M406 79c-19 78-25 164-31 244-6 86-13 166 10 220 14 33 52 51 88 47 43-4 79-28 89-62 14-50-7-122-17-205-11-82-19-166-45-244-16-49-81-50-94 0Z"/>
+    <path d="M385 555c-38 8-74 39-78 78-5 49 20 90 61 108 39 18 75 9 112-1 35-9 73-17 111 1 38 19 80 13 108-16 33-35 35-87 10-125-22-33-59-47-99-45-38 1-70 19-106 20-39 0-76-26-119-20Z"/>
+    <path d="M442 719c-10 64-8 142-5 220 3 75 1 146-13 215-10 49 12 87 52 92 38 4 67-23 69-70 4-75-10-151-12-231-2-82 10-159 0-225-7-43-85-44-91-1Z"/>
+    <path d="M572 727c-10 57-5 131 3 204 9 79 14 154 5 226-6 49 17 82 53 81 37-1 58-32 53-78-8-76-22-151-26-233-3-78 2-148-8-204-8-43-72-40-80 4Z"/>
+  </g>
+  <g stroke="#E7FCFF" stroke-linecap="round" stroke-opacity=".55" stroke-width="16" filter="url(#soft)">
+    <path d="M448 114c-24 118-24 253-30 365M421 600c-38-2-70 16-84 44m185-40c42-6 79 8 99 35M469 778c-4 142 6 281-12 400m164-393c8 145 24 254 17 390"/>
+  </g>
+  <g stroke="#8EE6FF" stroke-opacity=".32" stroke-width="2">
+    <path d="M300 540h352M300 710h352M358 365h220M395 744h200"/>
+    <path d="M245 230v730M660 210v790" stroke-dasharray="3 12"/>
+  </g>
+</svg>

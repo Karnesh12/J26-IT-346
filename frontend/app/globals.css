@@ -1,0 +1,87 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  color: #0f1b2d;
+  background: #f6f8fb;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+::selection {
+  color: white;
+  background: #0e9aa0;
+}
+
+.focus-ring:focus-visible {
+  outline: 3px solid rgba(14, 154, 160, 0.38);
+  outline-offset: 2px;
+}
+
+.auth-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+
+.hero-art {
+  position: absolute;
+  inset: 0 0 0 auto;
+  width: 62%;
+  opacity: 0.64;
+  mask-image: linear-gradient(to left, rgba(0, 0, 0, 0.95), transparent 94%);
+}
+
+.hero-shade {
+  background: linear-gradient(90deg, #031a33 0%, rgba(3, 26, 51, 0.95) 38%, rgba(3, 26, 51, 0.28) 100%);
+}
+
+@media (max-width: 1023px) {
+  .auth-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .hero-panel {
+    min-height: 0;
+  }
+
+  .hero-features,
+  .hero-footer {
+    display: none;
+  }
+
+  .hero-copy {
+    margin-top: 1.25rem;
+  }
+
+  .hero-copy h1 {
+    max-width: 660px;
+    font-size: clamp(22px, 4vw, 32px);
+  }
+}
+
+@media (max-width: 640px) {
+  .hero-art {
+    width: 85%;
+    opacity: 0.28;
+  }
+
+  .hero-shade {
+    background: linear-gradient(90deg, rgba(3, 26, 51, 0.98), rgba(3, 26, 51, 0.7));
+  }
+}

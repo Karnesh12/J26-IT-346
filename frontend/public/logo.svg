@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="180" height="48" viewBox="0 0 180 48" fill="none">
+  <rect width="44" height="44" x="2" y="2" rx="12" fill="#0E9AA0"/>
+  <path d="M16.3 12.5a4.6 4.6 0 0 0-6.1 6.9l2.4 2.1 14.2 12.3 2.4 2.1a4.6 4.6 0 0 0 6.1-6.9l-2.4-2.1-14.2-12.3-2.4-2.1Z" stroke="white" stroke-width="3.4" stroke-linecap="round"/>
+  <circle cx="11.2" cy="14.5" r="3.5" fill="white"/><circle cx="32.8" cy="33.5" r="3.5" fill="white"/>
+  <text x="56" y="29" font-family="Arial,sans-serif" font-size="20" font-weight="700" fill="#031A33">BoneVision</text>
+  <text x="154" y="29" font-family="Arial,sans-serif" font-size="17" font-weight="700" fill="#0E9AA0">AI</text>
+</svg>
