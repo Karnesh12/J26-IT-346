@@ -44,6 +44,17 @@ class AccessRequest(db.Model):
     created_at = db.Column(db.DateTime(timezone=True), nullable=False, default=utc_now)
 
 
+class CaseRecord(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    case_id = db.Column(db.String(20), unique=True, nullable=False, index=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False, index=True)
+    region = db.Column(db.String(120), nullable=False)
+    module = db.Column(db.String(40), nullable=False)
+    status = db.Column(db.String(24), nullable=False, default="Awaiting review")
+    created_at = db.Column(db.DateTime(timezone=True), nullable=False, default=utc_now)
+    updated_at = db.Column(db.DateTime(timezone=True), nullable=False, default=utc_now, onupdate=utc_now)
+
+
 class RevokedToken(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     jti = db.Column(db.String(36), unique=True, nullable=False, index=True)
