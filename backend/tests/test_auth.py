@@ -3,7 +3,8 @@ import unittest
 from app import create_app
 from app.auth.services import hash_password
 from app.extensions import db
-from app.models import AccessRequest, User
+from app.models import AccessRequest, CaseRecord, User
+from flask_jwt_extended import create_access_token
 
 
 class TestConfig:
@@ -131,6 +132,55 @@ class AuthFlowTests(unittest.TestCase):
         with self.app.app_context():
             request_record = AccessRequest.query.filter_by(email="new@example.test").one()
             self.assertEqual(request_record.status, "pending")
+
+    def test_cases_are_created_listed_and_scoped_to_authenticated_user(self):
+        with self.app.app_context():
+            user = User.query.filter_by(email="researcher@example.test").one()
+            token = create_access_token(identity=str(user.id))
+            another_user = User(
+                name="Another Researcher",
+                email="another@example.test",
+                password_hash=hash_password("Researcher123!"),
+                role="researcher",
+                institution="Other University",
+                is_active=True,
+                is_approved=True,
+            )
+            db.session.add(another_user)
+            db.session.commit()
+            other_token = create_access_token(identity=str(another_user.id))
+
+        unauthorized = self.client.get("/api/cases")
+        self.assertEqual(unauthorized.status_code, 401)
+
+        created = self.client.post(
+            "/api/cases",
+            json={"region": "Wrist (Right)", "module": "Hand Analysis"},
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        self.assertEqual(created.status_code, 201)
+        self.assertEqual(created.get_json()["data"]["id"], "BV-001")
+        self.assertEqual(created.get_json()["data"]["status"], "Awaiting review")
+
+        listed = self.client.get("/api/cases", headers={"Authorization": f"Bearer {token}"})
+        listed_data = listed.get_json()["data"]
+        self.assertEqual(listed.status_code, 200)
+        self.assertEqual(listed_data["stats"], {"total": 1, "awaiting_review": 1, "reviewed": 0})
+        self.assertEqual(len(listed_data["cases"]), 1)
+
+        other_list = self.client.get("/api/cases", headers={"Authorization": f"Bearer {other_token}"})
+        self.assertEqual(other_list.get_json()["data"]["stats"]["total"], 0)
+
+    def test_case_creation_rejects_invalid_module(self):
+        with self.app.app_context():
+            user = User.query.filter_by(email="researcher@example.test").one()
+            token = create_access_token(identity=str(user.id))
+        response = self.client.post(
+            "/api/cases",
+            json={"region": "Wrist", "module": "Unknown"},
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        self.assertEqual(response.status_code, 400)
 
 
 if __name__ == "__main__":

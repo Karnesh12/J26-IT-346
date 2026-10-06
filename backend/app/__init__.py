@@ -40,8 +40,10 @@ def create_app(config_class=Config):
 
     from . import models
     from .auth.routes import auth_bp
+    from .cases.routes import cases_bp
 
     app.register_blueprint(auth_bp, url_prefix="/api/auth")
+    app.register_blueprint(cases_bp, url_prefix="/api/cases")
 
     @jwt.token_in_blocklist_loader
     def token_is_revoked(_header, payload):
