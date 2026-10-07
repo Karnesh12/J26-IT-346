@@ -49,7 +49,9 @@ Open [http://localhost:3000](http://localhost:3000). The Next.js server proxies 
 - `/verify` — six-digit email verification
 - `/request-access` — researcher access request
 - `/forgot-password` — generic password reset request
-- `/dashboard` — protected placeholder workspace
+- `/dashboard` — protected research workspace with user-owned case totals and recent cases
 - `/api/health` — backend health status
+
+The authenticated cases API is available at `GET /api/cases` (case list and counts) and `POST /api/cases` (create a case with `region` and one of `X-ray Validation`, `Hand Analysis`, `Leg Analysis`, or `Segmentation`). Apply database migrations with `flask db upgrade` after updating the backend.
 
 This is a research application and is not intended for diagnosis, treatment, or clinical decision-making.

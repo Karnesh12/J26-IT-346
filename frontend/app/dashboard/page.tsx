@@ -1,3 +1,7 @@
+"use client";
+
+import { type FormEvent, useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   ArrowRight,
   Bone,
@@ -28,12 +32,6 @@ const navItems = [
   { icon: Settings, label: "Settings", active: false },
 ];
 
-const summaryCards = [
-  { value: "12", label: "cases", tone: "neutral" },
-  { value: "4", label: "awaiting review", tone: "warning" },
-  { value: "8", label: "reviewed", tone: "success" },
-] as const;
-
 const workflowSteps = [
   { id: 1, label: "Upload" },
   { id: 2, label: "Validate" },
@@ -49,6 +47,7 @@ const modules = [
     description: "Validate image and identify anatomical region.",
     button: "Open X-ray Validation",
     icon: "xray",
+    caseModule: "X-ray Validation",
   },
   {
     number: "02",
@@ -56,6 +55,7 @@ const modules = [
     description: "Detect and classify upper-limb fractures.",
     button: "Open Hand Analysis",
     icon: "hand",
+    caseModule: "Hand Analysis",
   },
   {
     number: "03",
@@ -63,6 +63,7 @@ const modules = [
     description: "Detect and classify lower-limb fractures.",
     button: "Open Leg Analysis",
     icon: "leg",
+    caseModule: "Leg Analysis",
   },
   {
     number: "04",
@@ -70,32 +71,62 @@ const modules = [
     description: "Inspect fracture masks and calibrated measurements.",
     button: "Open Segmentation",
     icon: "segment",
+    caseModule: "Segmentation",
   },
 ] as const;
 
-const recentCases = [
-  {
-    id: "BV-024",
-    region: "Wrist (Right)",
-    module: "Hand Analysis",
-    status: "Awaiting review",
-    date: "12 Mar 2025, 14:32",
-  },
-  {
-    id: "BV-023",
-    region: "Femur (Left)",
-    module: "Leg Analysis",
-    status: "Reviewed",
-    date: "11 Mar 2025, 10:18",
-  },
-  {
-    id: "BV-022",
-    region: "Ankle (Right)",
-    module: "Segmentation",
-    status: "Awaiting review",
-    date: "10 Mar 2025, 16:05",
-  },
-] as const;
+type CurrentUser = {
+  id: number;
+  name: string;
+  email: string;
+  role: string;
+  institution: string;
+};
+
+type DashboardCase = {
+  id: string;
+  region: string;
+  module: string;
+  status: "Awaiting review" | "Reviewed";
+  updated_at: string;
+};
+
+type DashboardData = {
+  cases: DashboardCase[];
+  stats: {
+    total: number;
+    awaiting_review: number;
+    reviewed: number;
+  };
+};
+
+type ApiResponse<T> = {
+  success: boolean;
+  message: string;
+  data: T | null;
+};
+
+class SessionExpiredError extends Error {}
+
+async function authenticatedFetch(path: string, init?: RequestInit) {
+  let response = await fetch(path, { ...init, cache: "no-store" });
+  if (response.status === 401) {
+    const refresh = await fetch("/api/auth/refresh", { method: "POST", cache: "no-store" });
+    if (!refresh.ok) throw new SessionExpiredError("Your session has expired.");
+    response = await fetch(path, { ...init, cache: "no-store" });
+  }
+  return response;
+}
+
+function formatUpdatedAt(value: string) {
+  return new Date(value).toLocaleString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
 
 type ModuleType = (typeof modules)[number]["icon"];
 
@@ -148,6 +179,79 @@ function ModuleGraphic({ type }: { type: ModuleType }) {
 }
 
 export default function DashboardPage() {
+  const router = useRouter();
+  const [user, setUser] = useState<CurrentUser | null>(null);
+  const [dashboard, setDashboard] = useState<DashboardData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [showNewCase, setShowNewCase] = useState(false);
+  const [region, setRegion] = useState("");
+  const [selectedModule, setSelectedModule] = useState("X-ray Validation");
+  const [savingCase, setSavingCase] = useState(false);
+  const [formError, setFormError] = useState("");
+
+  const loadWorkspace = useCallback(async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const profileResponse = await authenticatedFetch("/api/auth/me");
+      if (!profileResponse.ok) {
+        const result = await profileResponse.json() as ApiResponse<CurrentUser>;
+        throw new Error(result.message || "Unable to load your profile.");
+      }
+      const profile = await profileResponse.json() as ApiResponse<CurrentUser>;
+      if (!profile.success || !profile.data) throw new Error(profile.message || "Unable to load your profile.");
+
+      const casesResponse = await authenticatedFetch("/api/cases");
+      if (!casesResponse.ok) {
+        const result = await casesResponse.json() as ApiResponse<DashboardData>;
+        throw new Error(result.message || "Unable to load cases.");
+      }
+      const caseResult = await casesResponse.json() as ApiResponse<DashboardData>;
+      if (!caseResult.success || !caseResult.data) throw new Error(caseResult.message || "Unable to load cases.");
+      setUser(profile.data);
+      setDashboard(caseResult.data);
+    } catch (loadError) {
+      if (loadError instanceof SessionExpiredError) {
+        router.replace("/login");
+      } else {
+        setError(loadError instanceof Error ? loadError.message : "Unable to load your workspace.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [router]);
+
+  useEffect(() => {
+    void loadWorkspace();
+  }, [loadWorkspace]);
+
+  async function submitNewCase(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setSavingCase(true);
+    setFormError("");
+    try {
+      const response = await authenticatedFetch("/api/cases", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ region, module: selectedModule }),
+      });
+      const result = await response.json() as ApiResponse<DashboardCase>;
+      if (!response.ok || !result.success) throw new Error(result.message || "Unable to create the case.");
+      setShowNewCase(false);
+      setRegion("");
+      await loadWorkspace();
+    } catch (submitError) {
+      if (submitError instanceof SessionExpiredError) {
+        router.replace("/login");
+      } else {
+        setFormError(submitError instanceof Error ? submitError.message : "Unable to create the case.");
+      }
+    } finally {
+      setSavingCase(false);
+    }
+  }
+
   return (
     <main className="min-h-screen bg-[#edf3f8] text-[#031A33]">
       <div className="flex min-h-screen">
@@ -187,26 +291,30 @@ export default function DashboardPage() {
                 <UserCircle2 className="h-5 w-5" />
               </div>
               <div className="flex-1">
-                <div className="text-[15px] font-semibold">Dr. Alex Carter</div>
-                <div className="text-[12px] text-[#bfd0e8]">Researcher</div>
+                <div className="text-[15px] font-semibold">{user?.name || "Researcher"}</div>
+                <div className="text-[12px] text-[#bfd0e8]">{user?.role || "Researcher"}</div>
               </div>
             </div>
 
-            <button className="mt-4 flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-[15px] font-medium text-[#dfeaf5] hover:bg-[#10355d]">
-              <LogOut className="h-5 w-5" />
-              <span>Sign out</span>
-            </button>
+            <form action="/api/auth/logout" method="post">
+              <button className="mt-4 flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-[15px] font-medium text-[#dfeaf5] hover:bg-[#10355d]">
+                <LogOut className="h-5 w-5" />
+                <span>Sign out</span>
+              </button>
+            </form>
           </div>
         </aside>
 
         <section className="flex-1">
           <header className="flex h-[78px] items-center justify-between border-b border-[#dfe7ee] bg-[#f5f7fa] px-7">
             <div className="flex items-center gap-4 text-[15px] text-[#445a76]">
-              <span className="font-bold text-[#0d1f39]">Case BV-024</span>
+              <span className="font-bold text-[#0d1f39]">
+                {dashboard?.cases[0] ? `Latest case: ${dashboard.cases[0].id}` : "No cases yet"}
+              </span>
               <span className="text-[#8f9aac]">•</span>
               <span>Research prototype</span>
               <span className="text-[#8f9aac]">•</span>
-              <span>Demo data</span>
+              <span>Live workspace</span>
             </div>
 
             <div className="flex items-center gap-3">
@@ -215,7 +323,7 @@ export default function DashboardPage() {
               </div>
               <div className="flex items-center gap-2 rounded-xl bg-[#edf3f8] px-3 py-2 text-[12px] font-medium text-[#415775]">
                 <div className="h-2.5 w-2.5 rounded-full bg-[#0E9AA0]" />
-                <span>Musculoskeletal Fracture Recognition</span>
+                <span>{user?.institution || "Musculoskeletal Fracture Recognition"}</span>
               </div>
             </div>
           </header>
@@ -230,19 +338,37 @@ export default function DashboardPage() {
                   AI-Driven Solution for Musculoskeletal Fracture Recognition
                 </p>
                 <p className="mt-2 max-w-[760px] text-[15px] text-[#64748b]">
-                  Explore, analyse and review X-ray cases using AI-assisted tools. Research prototype with demo data.
+                  Explore, analyse and review X-ray cases using AI-assisted tools. Cases are saved to your workspace.
                 </p>
               </div>
 
-              <button className="mt-2 inline-flex items-center gap-2 rounded-xl bg-[#0d7ea6] px-5 py-4 text-[18px] font-semibold text-white shadow-sm hover:bg-[#0b6d92]">
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedModule("X-ray Validation");
+                  setShowNewCase(true);
+                }}
+                className="mt-2 inline-flex items-center gap-2 rounded-xl bg-[#0d7ea6] px-5 py-4 text-[18px] font-semibold text-white shadow-sm hover:bg-[#0b6d92]"
+              >
                 <Plus className="h-5 w-5" />
                 New case
               </button>
             </div>
 
+            {error && (
+              <div role="alert" className="mt-5 flex items-center justify-between rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+                <span>{error}</span>
+                <button type="button" onClick={() => void loadWorkspace()} className="font-semibold underline">Retry</button>
+              </div>
+            )}
+
             <div className="mt-8 rounded-2xl border border-[#dfe7ee] bg-white/70 p-4 shadow-sm">
               <div className="grid gap-4 xl:grid-cols-[1.15fr_1.15fr_1.15fr_1.5fr]">
-                {summaryCards.map(({ value, label, tone }) => (
+                {[
+                  { value: dashboard?.stats.total, label: "cases", tone: "neutral" },
+                  { value: dashboard?.stats.awaiting_review, label: "awaiting review", tone: "warning" },
+                  { value: dashboard?.stats.reviewed, label: "reviewed", tone: "success" },
+                ].map(({ value, label, tone }) => (
                   <div
                     key={label}
                     className="flex items-center justify-between rounded-xl border border-[#dde6ee] bg-[#f8fbfd] px-4 py-3"
@@ -267,7 +393,7 @@ export default function DashboardPage() {
                         )}
                       </div>
                       <div className="text-[15px] font-medium text-[#304a68]">
-                        {tone === "neutral" ? value : value}
+                        {loading ? "—" : value ?? 0}
                       </div>
                     </div>
                     <span className="text-[13px] text-[#60748a]">{label}</span>
@@ -318,7 +444,14 @@ export default function DashboardPage() {
 
                   <p className="mt-4 text-[16px] leading-6 text-[#485d74]">{module.description}</p>
 
-                  <button className="mt-6 inline-flex w-full items-center justify-center rounded-xl border border-[#0d8eb0] bg-[#f5fbfc] px-4 py-3 text-[16px] font-semibold text-[#0d6a83] transition hover:bg-[#ebf8fb]">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedModule(module.caseModule);
+                      setShowNewCase(true);
+                    }}
+                    className="mt-6 inline-flex w-full items-center justify-center rounded-xl border border-[#0d8eb0] bg-[#f5fbfc] px-4 py-3 text-[16px] font-semibold text-[#0d6a83] transition hover:bg-[#ebf8fb]"
+                  >
                     {module.button}
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </button>
@@ -329,7 +462,7 @@ export default function DashboardPage() {
             <div className="mt-12">
               <div className="flex items-center justify-between">
                 <h2 className="text-[20px] font-bold text-[#0f1f35]">Recent cases</h2>
-                <button className="inline-flex items-center gap-2 text-[15px] font-semibold text-[#0c5f8d]">
+                <button type="button" className="inline-flex items-center gap-2 text-[15px] font-semibold text-[#0c5f8d]">
                   View all cases
                   <ChevronRight className="h-4 w-4" />
                 </button>
@@ -348,7 +481,7 @@ export default function DashboardPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[#edf1f5]">
-                    {recentCases.map((row) => (
+                    {dashboard?.cases.map((row) => (
                       <tr key={row.id} className="text-[15px] text-[#20314a]">
                         <td className="px-5 py-4 font-medium">{row.id}</td>
                         <td className="px-5 py-4">{row.region}</td>
@@ -371,7 +504,7 @@ export default function DashboardPage() {
                             {row.status}
                           </span>
                         </td>
-                        <td className="px-5 py-4 text-[#546d87]">{row.date}</td>
+                        <td className="px-5 py-4 text-[#546d87]">{formatUpdatedAt(row.updated_at)}</td>
                         <td className="px-5 py-4">
                           <div className="flex items-center gap-3">
                             <button className="inline-flex items-center gap-2 rounded-xl border border-[#0d8eb0] bg-[#f5fbfc] px-3 py-2 text-[14px] font-semibold text-[#0d6a83]">
@@ -385,6 +518,20 @@ export default function DashboardPage() {
                         </td>
                       </tr>
                     ))}
+                    {!loading && dashboard?.cases.length === 0 && (
+                      <tr>
+                        <td colSpan={6} className="px-5 py-8 text-center text-sm text-[#64748b]">
+                          No cases yet. Create a case to start your research workflow.
+                        </td>
+                      </tr>
+                    )}
+                    {loading && (
+                      <tr>
+                        <td colSpan={6} className="px-5 py-8 text-center text-sm text-[#64748b]">
+                          Loading cases…
+                        </td>
+                      </tr>
+                    )}
                   </tbody>
                 </table>
               </div>
@@ -392,6 +539,75 @@ export default function DashboardPage() {
           </div>
         </section>
       </div>
+
+      {showNewCase && (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-[#031a33]/55 p-4">
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="new-case-title"
+            className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl"
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 id="new-case-title" className="text-xl font-bold text-[#0f1f35]">Create a research case</h2>
+                <p className="mt-1 text-sm text-[#64748b]">Add case details to your workspace. No X-ray image is uploaded yet.</p>
+              </div>
+              <button
+                type="button"
+                aria-label="Close"
+                onClick={() => setShowNewCase(false)}
+                className="rounded px-2 py-1 text-xl text-[#64748b] hover:bg-[#edf3f8]"
+              >
+                ×
+              </button>
+            </div>
+            <form onSubmit={submitNewCase} className="mt-6 space-y-4">
+              <div>
+                <label htmlFor="case-region" className="mb-1.5 block text-sm font-semibold text-[#304a68]">Anatomical region</label>
+                <input
+                  id="case-region"
+                  required
+                  minLength={2}
+                  maxLength={120}
+                  value={region}
+                  onChange={(event) => setRegion(event.target.value)}
+                  placeholder="e.g. Wrist (Right)"
+                  className="w-full rounded-lg border border-[#cbd7e3] px-3 py-2.5 text-sm outline-none focus:border-[#0d8eb0] focus:ring-2 focus:ring-[#0d8eb0]/20"
+                />
+              </div>
+              <div>
+                <label htmlFor="case-module" className="mb-1.5 block text-sm font-semibold text-[#304a68]">Research module</label>
+                <select
+                  id="case-module"
+                  value={selectedModule}
+                  onChange={(event) => setSelectedModule(event.target.value)}
+                  className="w-full rounded-lg border border-[#cbd7e3] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#0d8eb0] focus:ring-2 focus:ring-[#0d8eb0]/20"
+                >
+                  {modules.map((module) => <option key={module.caseModule}>{module.caseModule}</option>)}
+                </select>
+              </div>
+              {formError && <p role="alert" className="text-sm text-red-700">{formError}</p>}
+              <div className="flex justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowNewCase(false)}
+                  className="rounded-lg border border-[#cbd7e3] px-4 py-2 text-sm font-semibold text-[#415775] hover:bg-[#f5f8fa]"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingCase}
+                  className="rounded-lg bg-[#0d7ea6] px-4 py-2 text-sm font-semibold text-white hover:bg-[#0b6d92] disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {savingCase ? "Creating…" : "Create case"}
+                </button>
+              </div>
+            </form>
+          </section>
+        </div>
+      )}
     </main>
   );
 }

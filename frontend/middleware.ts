@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 export function middleware(request: NextRequest) {
-  if (request.nextUrl.pathname.startsWith("/api/auth/") && !["GET", "HEAD", "OPTIONS"].includes(request.method)) {
+  if (request.nextUrl.pathname.startsWith("/api/") && !["GET", "HEAD", "OPTIONS"].includes(request.method)) {
     const origin = request.headers.get("origin");
     if (origin) {
       try {
@@ -21,4 +21,4 @@ export function middleware(request: NextRequest) {
   return NextResponse.next();
 }
 
-export const config = { matcher: ["/dashboard/:path*", "/api/auth/:path*"] };
+export const config = { matcher: ["/dashboard/:path*", "/api/:path*"] };
