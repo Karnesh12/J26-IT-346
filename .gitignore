@@ -1,0 +1,29 @@
+# ---- data, models and images: never on GitHub ----
+*.npz
+*.pt
+*.pth
+*.safetensors
+*.zip
+*.jpg
+*.jpeg
+*.png
+*.dcm
+data/
+outputs/
+
+# ---- Python / Jupyter ----
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+.venv/
+venv/
+
+# ---- Node / React ----
+node_modules/
+build/
+dist/
+
+# ---- secrets / OS ----
+.env
+.DS_Store
+Thumbs.db
