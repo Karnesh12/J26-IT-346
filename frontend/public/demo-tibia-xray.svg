@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 920" fill="none">
+  <defs>
+    <radialGradient id="plate" cx="50%" cy="46%" r="65%">
+      <stop stop-color="#31383d"/>
+      <stop offset=".72" stop-color="#111518"/>
+      <stop offset="1" stop-color="#030506"/>
+    </radialGradient>
+    <linearGradient id="bone" x1="50%" x2="50%" y1="0%" y2="100%">
+      <stop stop-color="#f4f6f4" stop-opacity=".8"/>
+      <stop offset=".46" stop-color="#d8dedc" stop-opacity=".58"/>
+      <stop offset="1" stop-color="#f0f2ef" stop-opacity=".75"/>
+    </linearGradient>
+    <filter id="glow" x="-.3" y="-.1" width="1.6" height="1.2">
+      <feGaussianBlur stdDeviation="12"/>
+    </filter>
+    <filter id="soft" x="-.2" y="-.1" width="1.4" height="1.2">
+      <feGaussianBlur stdDeviation="4"/>
+    </filter>
+    <pattern id="grain" width="9" height="9" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="3" r=".65" fill="#dfe4e3" opacity=".12"/>
+      <circle cx="7" cy="7" r=".5" fill="#aab3b3" opacity=".1"/>
+    </pattern>
+  </defs>
+  <rect width="640" height="920" fill="url(#plate)"/>
+  <path d="M90 100h460M80 830h480" stroke="#aeb7b8" stroke-opacity=".07"/>
+  <g opacity=".34" filter="url(#glow)" fill="#e7ebea">
+    <path d="M240 62c-35 13-67 41-69 75-2 31 18 53 45 61l24 78 11 520c0 32 12 56 32 58 22 2 36-21 37-51l14-522 25-82c28-10 46-33 43-62-4-34-36-59-72-70-32-10-58-17-90-5Z"/>
+    <path d="M421 97c-18 14-28 45-29 79-1 42 4 93 7 147l-3 442c0 25 10 43 23 42 16-1 22-22 23-45l13-440c2-62 17-110 11-159-4-33-23-63-45-66Z"/>
+  </g>
+  <g fill="url(#bone)" stroke="#f4f6f4" stroke-opacity=".5" stroke-width="5">
+    <path d="M224 83c-34 13-58 38-57 67 1 28 22 48 54 58l23 71 12 506c1 39 11 58 28 58 19 0 30-22 31-59l13-503 23-74c33-10 52-30 50-59-2-30-27-54-62-67-34-12-81-11-115 2Z"/>
+    <path d="M421 110c-20 16-28 47-27 83 1 35 8 84 8 133l-1 444c0 31 9 48 21 47 14-1 21-18 22-50l13-441c2-51 15-96 12-139-2-34-18-69-39-77-4-2-6-1-9 0Z"/>
+    <path d="M218 77c-32-13-64-1-77 22-12 22-1 44 20 56 17 9 37 10 55 2 14-6 19-22 18-40-1-18-6-33-16-40Z"/>
+    <path d="M344 77c34-15 67-5 81 18 14 24 3 46-20 59-17 9-38 10-56 1-14-7-19-23-18-41 1-17 4-30 13-37Z"/>
+    <path d="M241 822c-24 4-44 15-57 31-10 12-8 27 5 37 15 12 35 15 62 12l35-2c24 3 45 1 58-11 10-9 9-23-1-35-14-18-33-28-57-32l-8-4-12 17-11-17-14 4Z"/>
+    <path d="M397 818c-17 5-30 17-38 31-6 11-4 25 7 34 11 9 26 12 40 8 17-5 29-17 35-31 7-16 2-33-12-40-10-5-22-6-32-2Z"/>
+  </g>
+  <g fill="none" stroke="#f8faf7" stroke-opacity=".24" stroke-width="10" stroke-linecap="round" filter="url(#soft)">
+    <path d="M244 122c-12 83 13 145 12 248l5 386"/>
+    <path d="M302 120c15 119-3 238 1 356l-8 350"/>
+    <path d="M421 170c12 122-2 230 3 354l-2 272"/>
+  </g>
+  <path d="m249 472 37 24-23 31-36-22 22-33Z" fill="#080b0d" fill-opacity=".88"/>
+  <path d="m248 469 39 27" stroke="#fafbf6" stroke-opacity=".72" stroke-width="7"/>
+  <path d="m226 505 38 24" stroke="#f1f4f1" stroke-opacity=".53" stroke-width="5"/>
+  <rect width="640" height="920" fill="url(#grain)"/>
+  <text x="72" y="118" fill="#eff2f1" font-family="Arial,sans-serif" font-size="30" opacity=".85">R</text>
+  <path d="M78 708v130m0-130h10m-10 26h7m-7 26h10m-10 26h7m-7 26h10m-10 26h7m-7 26h10" stroke="#eef2f0" stroke-width="2" opacity=".75"/>
+  <text x="92" y="849" fill="#eef2f0" font-family="Arial,sans-serif" font-size="17" opacity=".8">10 cm</text>
+</svg>
