@@ -1,0 +1,9 @@
+group,expected,n,v1 MobileNetV3,v2 MobileNetV3,v2 DeiT-Small,v2 Ensemble
+chest_xray_PneumoniaMNIST,X_RAY,60,65.0,100.0,100.0,100.0
+CT_coronal_OrganCMNIST,NON_XRAY,50,100.0,94.0,96.0,94.0
+retina_photo_RetinaMNIST,NON_XRAY,40,77.5,97.5,87.5,95.0
+flower_photo_Flowers102,NON_XRAY,40,97.5,92.5,92.5,92.5
+text_document_synthetic,NON_XRAY,20,100.0,100.0,100.0,100.0
+EDGE_inverted_xray,unclear,20,95.0,100.0,100.0,100.0
+EDGE_photo_of_xray_simulated,unclear,20,100.0,95.0,100.0,100.0
+REAL_Dental_xray_photos,X_RAY,11,90.9,81.8,100.0,100.0
