@@ -5,9 +5,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent      # .../app/backend
 MODEL_DIR = BASE_DIR / "models"
 
 # trained model files (copied from Google Drive outputs/)
-MODEL1_FILES = {                                       # Model 1 v2: X-ray vs non-X-ray
-    "mobilenetv3": MODEL_DIR / "mobilenetv3_model1v2_best.pt",
-    "deit_small":  MODEL_DIR / "deit_small_model1v2_best.pt",
+MODEL1_FILES = {                                       # Model 1 v3: X-ray vs non-X-ray (v3 = v2 + photos of people/hands as negatives)
+    "mobilenetv3": MODEL_DIR / "mobilenetv3_model1v3_best.pt",
+    "deit_small":  MODEL_DIR / "deit_small_model1v3_best.pt",
 }
 MODEL2_FILES = {                                       # Model 2: anatomical region (7 classes)
     "mobilenetv3": MODEL_DIR / "mobilenetv3_model2_best.pt",
