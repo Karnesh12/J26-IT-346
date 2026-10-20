@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Component 4 | Fracture Segmentation Demo</title>
+  <style>
+    :root { color-scheme: light; --ink:#172033; --muted:#64748b; --line:#dbe2ea; --blue:#2456a6; --bg:#f4f7fb; }
+    * { box-sizing:border-box; }
+    body { margin:0; background:var(--bg); color:var(--ink); font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif; }
+    main { width:min(1120px, 94vw); margin:36px auto; }
+    header { margin-bottom:24px; }
+    h1 { margin:0 0 6px; font-size:clamp(1.6rem,3vw,2.25rem); }
+    h2 { margin:0 0 14px; font-size:1.1rem; }
+    p { margin:4px 0; color:var(--muted); }
+    .panel { background:white; border:1px solid var(--line); border-radius:14px; padding:20px; box-shadow:0 4px 18px #1e293b0a; }
+    .controls { display:grid; grid-template-columns:minmax(220px,1fr) minmax(180px,300px) auto; gap:18px; align-items:end; }
+    label { display:block; font-weight:650; margin-bottom:7px; }
+    input[type=file] { display:block; width:100%; padding:10px; border:1px solid var(--line); border-radius:8px; background:#fff; }
+    input[type=range] { width:100%; accent-color:var(--blue); }
+    button { border:0; border-radius:8px; padding:11px 18px; color:white; background:var(--blue); font-weight:700; cursor:pointer; }
+    button:disabled { opacity:.55; cursor:wait; }
+    .status { min-height:26px; margin-top:12px; color:var(--muted); }
+    .grid { display:grid; grid-template-columns:1fr 1fr; gap:18px; margin-top:18px; }
+    figure { margin:0; }
+    figure img { display:block; width:100%; max-height:620px; object-fit:contain; border:1px solid var(--line); border-radius:10px; background:#101827; }
+    figcaption { font-weight:650; margin:0 0 8px; }
+    .results { margin-top:18px; }
+    .summary { display:flex; gap:12px; flex-wrap:wrap; margin:12px 0; }
+    .chip { background:#eef4ff; color:#234d8c; border-radius:999px; padding:5px 11px; font-weight:650; }
+    table { border-collapse:collapse; width:100%; margin-top:12px; }
+    th,td { border-bottom:1px solid var(--line); padding:9px 7px; text-align:left; }
+    th { color:var(--muted); font-size:.9rem; }
+    .notice { margin-top:20px; padding:12px 14px; background:#fff8e6; border:1px solid #f2d58b; border-radius:9px; color:#684d0b; }
+    .hidden { display:none; }
+    @media(max-width:760px) { .controls,.grid { grid-template-columns:1fr; } main { margin:20px auto; } }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Fracture Segmentation Demo</h1>
+    <p>Component 4 standalone research prototype · YOLOv8-seg</p>
+  </header>
+  <section class="panel">
+    <div class="controls">
+      <div>
+        <label for="imageFile">Choose an X-ray image</label>
+        <input id="imageFile" type="file" accept="image/png,image/jpeg">
+      </div>
+      <div>
+        <label for="confidence">Confidence threshold: <span id="confidenceValue">0.25</span></label>
+        <input id="confidence" type="range" min="0.05" max="0.95" step="0.05" value="0.25">
+      </div>
+      <button id="analyzeButton" type="button">Analyze image</button>
+    </div>
+    <div id="status" class="status" role="status"></div>
+  </section>
+
+  <section id="imageGrid" class="grid hidden">
+    <figure><figcaption>Uploaded X-ray</figcaption><img id="originalImage" alt="Uploaded X-ray preview"></figure>
+    <figure><figcaption>Predicted mask overlay</figcaption><img id="overlayImage" alt="Predicted segmentation overlay"></figure>
+  </section>
+
+  <section id="resultPanel" class="panel results hidden">
+    <h2>Prediction summary</h2>
+    <div id="summary" class="summary"></div>
+    <div id="detectionTable"></div>
+    <p id="measurementNote"></p>
+  </section>
+
+  <div class="notice"><strong>Research demo only.</strong> The model predicts one class, “fractured.” It does not identify Hand/Leg, provide a diagnosis, or produce calibrated physical measurements.</div>
+</main>
+<script>
+  const fileInput = document.getElementById('imageFile');
+  const confidence = document.getElementById('confidence');
+  const confidenceValue = document.getElementById('confidenceValue');
+  const analyzeButton = document.getElementById('analyzeButton');
+  const status = document.getElementById('status');
+
+  confidence.addEventListener('input', () => confidenceValue.textContent = Number(confidence.value).toFixed(2));
+  fileInput.addEventListener('change', () => {
+    const file = fileInput.files[0];
+    if (!file) return;
+    document.getElementById('originalImage').src = URL.createObjectURL(file);
+    document.getElementById('imageGrid').classList.remove('hidden');
+    document.getElementById('resultPanel').classList.add('hidden');
+    status.textContent = '';
+  });
+
+  analyzeButton.addEventListener('click', async () => {
+    const file = fileInput.files[0];
+    if (!file) { status.textContent = 'Choose an image first.'; return; }
+    analyzeButton.disabled = true;
+    status.textContent = 'Running the model…';
+    try {
+      const form = new FormData();
+      form.append('file', file);
+      form.append('confidence', confidence.value);
+      const response = await fetch('/api/predict', { method:'POST', body:form });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.detail || 'Prediction failed.');
+
+      document.getElementById('overlayImage').src = `data:image/png;base64,${data.overlay_png_base64}`;
+      document.getElementById('imageGrid').classList.remove('hidden');
+      document.getElementById('resultPanel').classList.remove('hidden');
+      document.getElementById('summary').innerHTML = '';
+      [
+        `${data.prediction_count} predicted region${data.prediction_count === 1 ? '' : 's'}`,
+        `${data.image_width_px} × ${data.image_height_px} px`,
+        `Threshold ${Number(data.confidence_threshold).toFixed(2)}`
+      ].forEach(text => { const el=document.createElement('span'); el.className='chip'; el.textContent=text; document.getElementById('summary').appendChild(el); });
+
+      const table = document.getElementById('detectionTable');
+      if (!data.detections.length) {
+        table.innerHTML = '<p>No regions were predicted above this threshold. This does not rule out a fracture.</p>';
+      } else {
+        const rows = data.detections.map((d,i) => {
+          const extent = d.mask_extent ? `${d.mask_extent.width_px} × ${d.mask_extent.height_px}` : '—';
+          const length = d.approx_major_axis_span_px == null ? '—' : `${Number(d.approx_major_axis_span_px).toFixed(1)} px`;
+          const width = d.approx_short_axis_width_px == null ? '—' : `${Number(d.approx_short_axis_width_px).toFixed(1)} px`;
+          const coverage = d.mask_percent_of_image == null ? '—' : `${Number(d.mask_percent_of_image).toFixed(3)}%`;
+          return `<tr><td>${i+1}</td><td>${(d.confidence*100).toFixed(1)}%</td><td>${d.mask_area_px ?? '—'}</td><td>${extent} px</td><td>${length}</td><td>${width}</td><td>${coverage}</td></tr>`;
+        }).join('');
+        table.innerHTML = `<table><thead><tr><th>Region</th><th>Confidence</th><th>Mask area (px²)</th><th>Mask width × height</th><th>Estimated region length (px)</th><th>Short-axis width proxy (px)</th><th>Image area covered</th></tr></thead><tbody>${rows}</tbody></table>`;
+      }
+      document.getElementById('measurementNote').textContent = data.measurement_note + ' Length and short-axis width come from a rotated rectangle around the predicted mask. The width is not the distance between opposing fracture edges.';
+      status.textContent = 'Prediction complete.';
+    } catch (error) {
+      status.textContent = error.message;
+    } finally {
+      analyzeButton.disabled = false;
+    }
+  });
+</script>
+</body>
+</html>
