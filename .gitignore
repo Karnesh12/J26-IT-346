@@ -11,6 +11,12 @@
 data/
 outputs/
 
+# ---- exceptions: only the 4 models the Component 1 app uses ----
+!component1-xray-validation/app/backend/models/mobilenetv3_model1v3_best.pt
+!component1-xray-validation/app/backend/models/deit_small_model1v3_best.pt
+!component1-xray-validation/app/backend/models/mobilenetv3_model2v2_best.pt
+!component1-xray-validation/app/backend/models/deit_small_model2v2_best.pt
+
 # ---- Python / Jupyter ----
 __pycache__/
 *.pyc
