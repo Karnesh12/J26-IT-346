@@ -9,9 +9,9 @@ MODEL1_FILES = {                                       # Model 1 v3: X-ray vs no
     "mobilenetv3": MODEL_DIR / "mobilenetv3_model1v3_best.pt",
     "deit_small":  MODEL_DIR / "deit_small_model1v3_best.pt",
 }
-MODEL2_FILES = {                                       # Model 2: anatomical region (7 classes)
-    "mobilenetv3": MODEL_DIR / "mobilenetv3_model2_best.pt",
-    "deit_small":  MODEL_DIR / "deit_small_model2_best.pt",
+MODEL2_FILES = {                                       # Model 2 v2: + LEG data, balanced training
+    "mobilenetv3": MODEL_DIR / "mobilenetv3_model2v2_best.pt",
+    "deit_small":  MODEL_DIR / "deit_small_model2v2_best.pt",
 }
 
 IMG_SIZE = 224
