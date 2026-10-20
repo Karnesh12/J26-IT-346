@@ -1,0 +1,13 @@
+set,version,model,acc_3,LEG_correct,HAND_correct,acc_7,routed,wrongly_routed,to_review,disagree
+test,v1,mobilenetv3,0.973,0.9425,0.989,0.9152,,,,
+test,v1,deit_small,0.9846,0.9655,0.9945,0.9364,,,,
+test,v1,ensemble,0.9865,0.9655,0.9972,0.9287,0.975,4.0,13.0,12.0
+test,v2,mobilenetv3,0.9788,0.954,0.9972,0.9229,,,,
+test,v2,deit_small,0.9788,0.954,0.9834,0.9191,,,,
+test,v2,ensemble,0.9865,0.9655,0.9945,0.9287,0.9615,1.0,20.0,18.0
+newtest,v1,mobilenetv3,0.6615,0.6615,,0.5615,,,,
+newtest,v1,deit_small,0.9462,0.9462,,0.9154,,,,
+newtest,v1,ensemble,0.9385,0.9385,,0.9077,0.6769,5.0,42.0,41.0
+newtest,v2,mobilenetv3,0.9769,0.9769,,0.9462,,,,
+newtest,v2,deit_small,0.9846,0.9846,,0.9154,,,,
+newtest,v2,ensemble,0.9846,0.9846,,0.9462,0.9923,2.0,1.0,1.0
