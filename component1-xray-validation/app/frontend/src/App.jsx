@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { analyzeImage, checkHealth } from "./api.js";
 import UploadPanel from "./components/UploadPanel.jsx";
-import ValidationCard from "./components/ValidationCard.jsx";
-import RegionCard from "./components/RegionCard.jsx";
-import ExplanationCard from "./components/ExplanationCard.jsx";
+import PreviewPanel from "./components/PreviewPanel.jsx";
+import ResultsPanel from "./components/ResultsPanel.jsx";
+import { Logo } from "./components/Icons.jsx";
 
 export default function App() {
   const [backendOk, setBackendOk] = useState(null);     // null = checking
@@ -17,76 +17,59 @@ export default function App() {
     checkHealth().then(() => setBackendOk(true)).catch(() => setBackendOk(false));
   }, []);
 
+  const reset = () => { setResult(null); setError(""); };
   const onFile = (f) => {
     if (previewUrl) URL.revokeObjectURL(previewUrl);
-    setFile(f);
-    setPreviewUrl(URL.createObjectURL(f));
-    setResult(null);
-    setError("");
+    setFile(f); setPreviewUrl(URL.createObjectURL(f)); reset();
   };
-
+  const onClear = () => {
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    setFile(null); setPreviewUrl(null); reset();
+  };
   const onAnalyze = async () => {
-    setLoading(true);
-    setError("");
-    setResult(null);
-    try {
-      setResult(await analyzeImage(file));
-      setBackendOk(true);
-    } catch (e) {
-      setError(e.message);
-    } finally {
-      setLoading(false);
-    }
+    setLoading(true); reset();
+    try { setResult(await analyzeImage(file)); setBackendOk(true); }
+    catch (e) { setError(e.message); }
+    finally { setLoading(false); }
   };
 
   return (
     <div className="page">
-      <header>
-        <div>
-          <h1>BoneVision AI</h1>
-          <p className="subtitle">Component 1 · X-ray validation and anatomical region classification</p>
+      <header className="topbar">
+        <div className="brand"><Logo className="accent" /> <span>BoneVision <b>AI</b></span></div>
+        <div className="topbar-right">
+          <span className="muted small">Component 1 · Research prototype · not for clinical use</span>
+          <span className={`status ${backendOk === null ? "" : backendOk ? "ok" : "bad"}`}>
+            {backendOk === null ? "Checking models…" : backendOk ? "● Models ready" : "● Backend offline"}
+          </span>
         </div>
-        <span className={`status ${backendOk === null ? "" : backendOk ? "ok" : "bad"}`}>
-          {backendOk === null ? "Checking backend…" : backendOk ? "● Models ready" : "● Backend offline"}
-        </span>
       </header>
 
-      <div className="pipeline">
-        <span>Colour check</span>→<span>Model 1: X-ray?</span>→
-        <span>Model 2: HAND / LEG / OTHER</span>→<span>Grad-CAM + explanation</span>
-      </div>
-
-      <main>
-        <div className="left">
-          <UploadPanel file={file} previewUrl={previewUrl} onFile={onFile}
-                       onAnalyze={onAnalyze} loading={loading} />
-          {result && <p className="muted timing">Processed in {result.time_ms} ms</p>}
+      <main className="content">
+        <h1>X-ray Validation &amp; Region Classification</h1>
+        <p className="subtitle">
+          Check that the uploaded image is an X-ray, then classify the anatomical region to route the case to the
+          hand or leg fracture module.
+        </p>
+        <div className="pipeline">
+          <span>Colour check</span>→<span>Model 1: X-ray?</span>→<span>Model 2: HAND / LEG / OTHER</span>→<span>Grad-CAM + explanation</span>
         </div>
 
-        <div className="right">
-          {backendOk === false && !result && (
-            <div className="card notice bad">
-              The backend is not running. Start it in the backend folder with:
-              <code>uvicorn app.main:app --reload --port 8000</code>
-            </div>
-          )}
-          {error && <div className="card notice bad">{error}</div>}
-          {!result && !error && backendOk !== false && (
-            <div className="card notice">Upload an image and press <b>Analyse image</b> to see the results.</div>
-          )}
-          {result && (
-            <>
-              <ValidationCard v={result.validation} />
-              {result.region
-                ? <RegionCard r={result.region} />
-                : <div className="card notice">Region classification skipped – only images accepted as X-rays are analysed further.</div>}
-              {result.explanation && <ExplanationCard e={result.explanation} inputImage={result.input_image} />}
-            </>
-          )}
+        {backendOk === false && (
+          <div className="banner bad">The backend is not running. Start it in <code>app/backend</code> with
+            <code>uvicorn app.main:app --reload --port 8000</code></div>
+        )}
+        {error && <div className="banner bad">{error}</div>}
+
+        <div className="grid">
+          <UploadPanel file={file} previewUrl={previewUrl} onFile={onFile} onClear={onClear}
+                       onAnalyze={onAnalyze} loading={loading} timeMs={result?.time_ms ?? null} />
+          <PreviewPanel previewUrl={previewUrl} result={result} />
+          <ResultsPanel result={result} />
         </div>
       </main>
 
-      <footer>Research prototype (SLIIT BoneVision AI, J26-IT-346) – not for clinical use.</footer>
+      <footer>Research prototype (SLIIT BoneVision AI, J26-IT-346) · model outputs are not a clinical diagnosis.</footer>
     </div>
   );
 }
