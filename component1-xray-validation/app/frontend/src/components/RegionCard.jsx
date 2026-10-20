@@ -18,13 +18,28 @@ export default function RegionCard({ r }) {
     <section className="card">
       <div className="card-head">
         <h2>3 · Anatomical region <span className="muted">(Model 2)</span></h2>
-        <span className={`badge region ${r.super.toLowerCase()}`}>{r.super}</span>
+        {r.routed
+          ? <span className={`badge region ${r.super.toLowerCase()}`}>{r.super}</span>
+          : <span className="badge warn">Uncertain: {r.candidates.join(" or ")}</span>}
       </div>
-      <p className="headline">
-        <b>{r.super}</b> X-ray ({(r.super_confidence * 100).toFixed(1)}%) – most likely{" "}
-        <b>{r.fine}</b> ({(r.fine_confidence * 100).toFixed(1)}%)
-      </p>
-      <p className="muted route">{ROUTE[r.super]}</p>
+      {r.routed ? (
+        <>
+          <p className="headline">
+            <b>{r.super}</b> X-ray ({(r.super_confidence * 100).toFixed(1)}%) – most likely{" "}
+            <b>{r.fine}</b> ({(r.fine_confidence * 100).toFixed(1)}%)
+          </p>
+          <p className="muted route">{ROUTE[r.super]}</p>
+        </>
+      ) : (
+        <>
+          <p className="headline">
+            <b>Region uncertain: {r.candidates.join(" or ")}</b> – {r.route_reason}.
+            {" "}The ensemble leans towards {r.super} ({(r.super_confidence * 100).toFixed(1)}%), which is not
+            reliable enough to route automatically.
+          </p>
+          <p className="route warn-text">→ not routed to a fracture model – human review needed</p>
+        </>
+      )}
 
       <h3>HAND / LEG / OTHER</h3>
       <Bars items={superItems} highlight={r.super} />

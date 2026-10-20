@@ -15,6 +15,7 @@ from .models import ModelRegistry
 from .preprocess import load_and_prepare, to_tensor
 
 SUPER_ORDER = ["HAND", "LEG", "OTHER"]
+NAMES = {"mobilenetv3": "MobileNetV3", "deit_small": "DeiT-Small"}
 
 # expected anatomy per region (used in the rule-based explanation)
 ANATOMY = {
@@ -98,7 +99,21 @@ class Pipeline:
 
         per_model = {name: {"super": max(to_super(p), key=to_super(p).get), "fine": short(classes[int(p.argmax())])}
                      for name, p in per_model_probs.items()}
+        agree = len({v["super"] for v in per_model.values()}) == 1
+
+        # Routing rule: send the image to a fracture model ONLY if both models agree on HAND/LEG/OTHER
+        # and the ensemble is confident. Otherwise: not routed, human review (no silent wrong routing).
+        routed = agree and super_probs[sup] >= LOW_CONFIDENCE
+        if agree:
+            candidates = sorted(super_probs, key=super_probs.get, reverse=True)[:2]   # best guess + runner-up
+        else:
+            candidates = sorted({v["super"] for v in per_model.values()}, key=super_probs.get, reverse=True)
         return {
+            "routed": routed,
+            "candidates": candidates,
+            "route_reason": ("" if routed else
+                             "the two models disagree on HAND/LEG/OTHER" if not agree else
+                             f"low confidence ({super_probs[sup]:.0%} < {LOW_CONFIDENCE:.0%})"),
             "super": sup,
             "super_confidence": super_probs[sup],
             "super_probs": super_probs,
@@ -108,7 +123,7 @@ class Pipeline:
             "fine_probs": sorted([{"label": short(c), "super": smap[c], "p": float(probs[i])}
                                   for i, c in enumerate(classes)], key=lambda d: -d["p"]),
             "per_model": per_model,
-            "models_agree_super": len({v["super"] for v in per_model.values()}) == 1,
+            "models_agree_super": agree,
             "models_agree_fine": len({v["fine"] for v in per_model.values()}) == 1,
         }
 
@@ -119,16 +134,22 @@ class Pipeline:
         overlay = show_cam_on_image(rgb, heat, use_rgb=True)
         location = attention_location(heat)
         # routing safety (HAND/LEG/OTHER) and fine-region certainty are flagged separately
-        review = reg["super_confidence"] < LOW_CONFIDENCE or not reg["models_agree_super"]
+        review = not reg["routed"]
         region_uncertain = reg["fine_confidence"] < LOW_CONFIDENCE or not reg["models_agree_fine"]
-        text = (f'Classified as a {reg["super"]} X-ray (confidence {reg["super_confidence"]:.0%}); '
-                f'most likely region "{reg["fine"]}" ({reg["fine_confidence"]:.0%}). '
-                f'This region is characterised by {ANATOMY[reg["fine"]]}. '
-                f"The model's attention (Grad-CAM) is strongest in the {location} part of the image.")
         if review:
-            text += " Low confidence or model disagreement on HAND/LEG/OTHER - human review recommended."
-        elif region_uncertain:
-            text += " The exact sub-region is uncertain (neighbouring regions are similar)."
+            members = ", ".join(f'{NAMES.get(k, k)}: {v["super"]}' for k, v in reg["per_model"].items())
+            text = (f'Region uncertain: {" or ".join(reg["candidates"])} - {reg["route_reason"]} ({members}). '
+                    f'The ensemble leans towards {reg["super"]} ({reg["super_confidence"]:.0%}), '
+                    f'which is not reliable enough to route automatically. '
+                    f'Grad-CAM (MobileNetV3) for "{reg["fine"]}" is strongest in the {location} part of the image. '
+                    f'Not routed to a fracture model - human review needed.')
+        else:
+            text = (f'Classified as a {reg["super"]} X-ray (confidence {reg["super_confidence"]:.0%}); '
+                    f'most likely region "{reg["fine"]}" ({reg["fine_confidence"]:.0%}). '
+                    f'This region is characterised by {ANATOMY[reg["fine"]]}. '
+                    f"The model's attention (Grad-CAM) is strongest in the {location} part of the image.")
+            if region_uncertain:
+                text += " The exact sub-region is uncertain (neighbouring regions are similar)."
         return {"text": text, "review_recommended": review, "region_uncertain": region_uncertain,
                 "attention_location": location, "heatmap": png_data_url(overlay),
                 "method": "Grad-CAM (MobileNetV3)"}

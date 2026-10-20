@@ -21,7 +21,11 @@ print(f"Model 1: {v['decision'].upper()}  (p_xray = {v['p_xray']:.3f}; per model
 print("         " + v["message"])
 if res["region"]:
     r = res["region"]
-    print(f"Model 2: {r['super']} ({r['super_confidence']:.1%}) - region {r['fine']} ({r['fine_confidence']:.1%})")
+    if r["routed"]:
+        print(f"Model 2: {r['super']} ({r['super_confidence']:.1%}) - region {r['fine']} ({r['fine_confidence']:.1%})")
+    else:
+        print(f"Model 2: UNCERTAIN {' or '.join(r['candidates'])} - {r['route_reason']}; "
+              f"ensemble leans {r['super']} ({r['super_confidence']:.1%}) - not routed, human review")
     print("         per model:", r["per_model"])
     print("Explanation:", res["explanation"]["text"])
 print(f"Time: {res['time_ms']} ms")
