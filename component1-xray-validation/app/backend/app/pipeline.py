@@ -70,8 +70,9 @@ class Pipeline:
         per_model = {name: float(predict(m, gray)[1]) for name, m in self.reg.model1.items()}  # index 1 = X_RAY
         p = float(np.mean(list(per_model.values())))
         if colour >= COLOURFUL_REJECT:                                     # stage 0: X-rays are not colourful
-            decision, message = "not_xray", ("This is a colour photo. X-rays are grayscale - "
-                                             "please upload the X-ray image itself.")
+                decision, message = "not_xray", ("This image is in colour, but real X-rays are grayscale. "
+                                             "If it is a coloured or tinted X-ray, please upload the original "
+                                             "grayscale X-ray image.")
         elif p >= XRAY_ACCEPT:
             decision, message = "xray", "This image was accepted as an X-ray."
         elif p < XRAY_REJECT:
