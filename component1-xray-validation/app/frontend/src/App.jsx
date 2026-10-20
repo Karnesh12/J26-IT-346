@@ -39,9 +39,9 @@ export default function App() {
         <div className="brand"><Logo className="accent" /> <span>BoneVision <b>AI</b></span></div>
         <div className="topbar-right">
           <span className="muted small">Component 1 · Research prototype · not for clinical use</span>
-          <span className={`status ${backendOk === null ? "" : backendOk ? "ok" : "bad"}`}>
+          {/* <span className={`status ${backendOk === null ? "" : backendOk ? "ok" : "bad"}`}>
             {backendOk === null ? "Checking models…" : backendOk ? "● Models ready" : "● Backend offline"}
-          </span>
+          </span> */}
         </div>
       </header>
 
