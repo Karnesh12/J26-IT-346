@@ -17,6 +17,9 @@ outputs/
 !component1-xray-validation/app/backend/models/mobilenetv3_model2v2_best.pt
 !component1-xray-validation/app/backend/models/deit_small_model2v2_best.pt
 
+# ---- exception: result charts (aggregated numbers only, no X-ray images) ----
+!component1-xray-validation/results/**/*.png
+
 # ---- Python / Jupyter ----
 __pycache__/
 *.pyc
